@@ -282,6 +282,7 @@ const PERSISTED_SETTING_DEFAULTS = {
   cloudflareTempEmailAdminAuth: '',
   cloudflareTempEmailCustomAuth: '',
   cloudflareTempEmailReceiveMailbox: '',
+  cloudflareTempEmailUseRandomSubdomain: false,
   cloudflareTempEmailDomain: '',
   cloudflareTempEmailDomains: [],
   hotmailAccounts: [],
@@ -829,6 +830,7 @@ function getCloudflareTempEmailConfig(state = {}) {
     adminAuth: String(state.cloudflareTempEmailAdminAuth || ''),
     customAuth: String(state.cloudflareTempEmailCustomAuth || ''),
     receiveMailbox: normalizeCloudflareTempEmailReceiveMailbox(state.cloudflareTempEmailReceiveMailbox),
+    useRandomSubdomain: Boolean(state.cloudflareTempEmailUseRandomSubdomain),
     domain: normalizeCloudflareTempEmailDomain(state.cloudflareTempEmailDomain),
     domains: normalizeCloudflareTempEmailDomains(state.cloudflareTempEmailDomains),
   };
@@ -897,6 +899,7 @@ function normalizePersistentSettingValue(key, value) {
       return normalizeEmailGenerator(value);
     case 'autoDeleteUsedIcloudAlias':
     case 'accountRunHistoryTextEnabled':
+    case 'cloudflareTempEmailUseRandomSubdomain':
       return Boolean(value);
     case 'icloudHostPreference':
       return normalizeIcloudHost(value) || 'auto';
