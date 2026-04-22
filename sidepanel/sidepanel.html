@@ -112,6 +112,7 @@
         <select id="select-panel-mode" class="data-select">
           <option value="cpa">CPA 面板</option>
           <option value="sub2api">SUB2API</option>
+          <option value="codex2api">Codex2API</option>
         </select>
       </div>
       <div id="contribution-mode-panel" class="contribution-mode-panel" hidden>
@@ -191,6 +192,16 @@
         <span class="data-label">默认代理</span>
         <input type="text" id="input-sub2api-default-proxy" class="data-input"
           placeholder="留空则不使用代理；或填写代理名称 / ID" />
+      </div>
+      <div class="data-row" id="row-codex2api-url" style="display:none;">
+        <span class="data-label">Codex2API</span>
+        <input type="text" id="input-codex2api-url" class="data-input"
+          placeholder="http://localhost:8080/admin/accounts" />
+      </div>
+      <div class="data-row" id="row-codex2api-admin-key" style="display:none;">
+        <span class="data-label">管理密钥</span>
+        <input type="password" id="input-codex2api-admin-key" class="data-input"
+          placeholder="请输入 Codex2API Admin Secret" />
       </div>
       <div class="data-row" id="row-custom-password">
         <span class="data-label">账户密码</span>

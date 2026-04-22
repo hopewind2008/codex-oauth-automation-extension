@@ -155,6 +155,7 @@ const OAUTH_FLOW_TIMEOUT_MS = 6 * 60 * 1000;
 const SUB2API_STEP1_RESPONSE_TIMEOUT_MS = 90000;
 const SUB2API_STEP9_RESPONSE_TIMEOUT_MS = 120000;
 const DEFAULT_SUB2API_URL = 'https://sub2api.hisence.fun/admin/accounts';
+const DEFAULT_CODEX2API_URL = 'http://localhost:8080/admin/accounts';
 const DEFAULT_SUB2API_GROUP_NAME = 'codex';
 const DEFAULT_SUB2API_PROXY_NAME = '';
 const DEFAULT_SUB2API_REDIRECT_URI = 'http://localhost:1455/auth/callback';
@@ -251,6 +252,8 @@ const PERSISTED_SETTING_DEFAULTS = {
   sub2apiPassword: '',
   sub2apiGroupName: DEFAULT_SUB2API_GROUP_NAME,
   sub2apiDefaultProxyName: DEFAULT_SUB2API_PROXY_NAME,
+  codex2apiUrl: DEFAULT_CODEX2API_URL,
+  codex2apiAdminKey: '',
   customPassword: '',
   autoRunSkipFailures: false,
   autoRunFallbackThreadIntervalMinutes: 0,
@@ -327,6 +330,8 @@ const DEFAULT_STATE = {
   sub2apiGroupId: null, // SUB2API 目标分组 ID。
   sub2apiDraftName: null, // SUB2API 本轮预生成的账号名称。
   sub2apiProxyId: null, // SUB2API 本轮使用的代理 ID。
+  codex2apiSessionId: null, // Codex2API OAuth 会话 ID。
+  codex2apiOAuthState: null, // Codex2API OAuth state。
   flowStartTime: null, // 当前流程开始时间。
   tabRegistry: {}, // 程序维护的标签页注册表。
   sourceLastUrls: {}, // 各来源页面最近一次打开的地址记录。
@@ -651,7 +656,14 @@ function normalizeEmailGenerator(value = '') {
 }
 
 function normalizePanelMode(value = '') {
-  return String(value || '').trim().toLowerCase() === 'sub2api' ? 'sub2api' : 'cpa';
+  const normalized = String(value || '').trim().toLowerCase();
+  if (normalized === 'sub2api') {
+    return 'sub2api';
+  }
+  if (normalized === 'codex2api') {
+    return 'codex2api';
+  }
+  return 'cpa';
 }
 
 function normalizeMailProvider(value = '') {
@@ -871,6 +883,10 @@ function normalizePersistentSettingValue(key, value) {
     case 'sub2apiGroupName':
       return String(value || '').trim();
     case 'sub2apiDefaultProxyName':
+      return String(value || '').trim();
+    case 'codex2apiUrl':
+      return normalizeCodex2ApiUrl(value);
+    case 'codex2apiAdminKey':
       return String(value || '').trim();
     case 'customPassword':
       return String(value || '');
@@ -3620,11 +3636,31 @@ function normalizeSub2ApiUrl(rawUrl) {
   return parsed.toString();
 }
 
+function normalizeCodex2ApiUrl(rawUrl) {
+  if (typeof navigationUtils !== 'undefined' && navigationUtils?.normalizeCodex2ApiUrl) {
+    return navigationUtils.normalizeCodex2ApiUrl(rawUrl);
+  }
+  const input = (rawUrl || '').trim() || DEFAULT_CODEX2API_URL;
+  const withProtocol = /^https?:\/\//i.test(input) ? input : `http://${input}`;
+  const parsed = new URL(withProtocol);
+  if (!parsed.pathname || parsed.pathname === '/' || parsed.pathname === '/admin') {
+    parsed.pathname = '/admin/accounts';
+  }
+  parsed.hash = '';
+  return parsed.toString();
+}
+
 function getPanelMode(state = {}) {
   if (typeof navigationUtils !== 'undefined' && navigationUtils?.getPanelMode) {
     return navigationUtils.getPanelMode(state);
   }
-  return state.panelMode === 'sub2api' ? 'sub2api' : 'cpa';
+  if (state.panelMode === 'sub2api') {
+    return 'sub2api';
+  }
+  if (state.panelMode === 'codex2api') {
+    return 'codex2api';
+  }
+  return 'cpa';
 }
 
 function getPanelModeLabel(modeOrState) {
@@ -3632,7 +3668,13 @@ function getPanelModeLabel(modeOrState) {
     return navigationUtils.getPanelModeLabel(modeOrState);
   }
   const mode = typeof modeOrState === 'string' ? modeOrState : getPanelMode(modeOrState);
-  return mode === 'sub2api' ? 'SUB2API' : 'CPA';
+  if (mode === 'sub2api') {
+    return 'SUB2API';
+  }
+  if (mode === 'codex2api') {
+    return 'Codex2API';
+  }
+  return 'CPA';
 }
 
 function isSignupPageHost(hostname = '') {
@@ -3936,6 +3978,7 @@ function isRetryableContentScriptTransportError(error) {
 }
 
 const navigationUtils = self.MultiPageBackgroundNavigationUtils?.createNavigationUtils({
+  DEFAULT_CODEX2API_URL,
   DEFAULT_SUB2API_URL,
   normalizeLocalCpaStep9Mode,
 });
@@ -4111,6 +4154,8 @@ function getDownstreamStateResets(step) {
       sub2apiOAuthState: null,
       sub2apiGroupId: null,
       sub2apiDraftName: null,
+      codex2apiSessionId: null,
+      codex2apiOAuthState: null,
       flowStartTime: null,
       password: null,
       lastEmailTimestamp: null,
@@ -4896,6 +4941,8 @@ async function handleStepData(step, payload) {
       if (payload.sub2apiGroupId !== undefined) updates.sub2apiGroupId = payload.sub2apiGroupId || null;
       if (payload.sub2apiDraftName !== undefined) updates.sub2apiDraftName = payload.sub2apiDraftName || null;
       if (payload.sub2apiProxyId !== undefined) updates.sub2apiProxyId = payload.sub2apiProxyId || null;
+      if (payload.codex2apiSessionId !== undefined) updates.codex2apiSessionId = payload.codex2apiSessionId || null;
+      if (payload.codex2apiOAuthState !== undefined) updates.codex2apiOAuthState = payload.codex2apiOAuthState || null;
       if (Object.keys(updates).length) {
         await setState(updates);
       }
@@ -6159,6 +6206,7 @@ const panelBridge = self.MultiPageBackgroundPanelBridge?.createPanelBridge({
   closeConflictingTabsForSource,
   ensureContentScriptReadyOnTab,
   getPanelMode,
+  normalizeCodex2ApiUrl,
   normalizeSub2ApiUrl,
   rememberSourceLastUrl,
   sendToContentScript,
@@ -6334,6 +6382,7 @@ const step10Executor = self.MultiPageBackgroundStep10?.createStep10Executor({
   getTabId,
   isLocalhostOAuthCallbackUrl,
   isTabAlive,
+  normalizeCodex2ApiUrl,
   normalizeSub2ApiUrl,
   rememberSourceLastUrl,
   reuseOrCreateTab,
@@ -6782,7 +6831,7 @@ async function runPreStep6CookieCleanup() {
 
 async function refreshOAuthUrlBeforeStep6(state) {
   if (state?.contributionModeExpected && !state?.contributionMode) {
-    throw new Error('步骤 7：当前自动流程预期使用贡献模式，但运行态 contributionMode 已丢失，已阻止回退到普通 CPA / SUB2API 链路。请重新进入贡献模式后再点击自动。');
+    throw new Error('步骤 7：当前自动流程预期使用贡献模式，但运行态 contributionMode 已丢失，已阻止回退到普通 CPA / SUB2API / Codex2API 链路。请重新进入贡献模式后再点击自动。');
   }
   if (state?.contributionMode && contributionOAuthManager?.startContributionFlow) {
     await addLog('步骤 7：contributionMode=true，走公开贡献接口，正在申请 OAuth 登录地址...', 'info');
@@ -6798,7 +6847,7 @@ async function refreshOAuthUrlBeforeStep6(state) {
     await handleStepData(1, { oauthUrl });
     return oauthUrl;
   }
-  await addLog(`步骤 7：contributionMode=false，走普通 CPA / SUB2API 链路（当前面板：${getPanelModeLabel(state)}），正在刷新 OAuth 登录地址...`, 'info');
+  await addLog(`步骤 7：contributionMode=false，走普通 CPA / SUB2API / Codex2API 链路（当前面板：${getPanelModeLabel(state)}），正在刷新 OAuth 登录地址...`, 'info');
   console.log(LOG_PREFIX, '[refreshOAuthUrlBeforeStep6] requesting fresh OAuth directly from panel');
   const refreshResult = await requestOAuthUrlFromPanel(state, { logLabel: '步骤 7' });
   await handleStepData(1, refreshResult);
@@ -7524,7 +7573,7 @@ async function executeContributionStep10(state) {
 
 async function executeStep10(state) {
   if (state?.contributionModeExpected && !state?.contributionMode) {
-    throw new Error('步骤 10：当前自动流程预期使用贡献模式，但运行态 contributionMode 已丢失，已阻止回退到普通 CPA / SUB2API 提交。请重新进入贡献模式后再点击自动。');
+    throw new Error('步骤 10：当前自动流程预期使用贡献模式，但运行态 contributionMode 已丢失，已阻止回退到普通 CPA / SUB2API / Codex2API 提交。请重新进入贡献模式后再点击自动。');
   }
   if (state?.contributionMode) {
     return executeContributionStep10(state);

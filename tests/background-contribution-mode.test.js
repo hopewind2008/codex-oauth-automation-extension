@@ -536,7 +536,7 @@ return { refreshOAuthUrlBeforeStep6 };
   delete globalThis.LOG_PREFIX;
 });
 
-test('refreshOAuthUrlBeforeStep6 logs the normal CPA/SUB2API path explicitly when contributionMode=false', async () => {
+test('refreshOAuthUrlBeforeStep6 logs the normal CPA/SUB2API/Codex2API path explicitly when contributionMode=false', async () => {
   const bundle = extractFunction(backgroundSource, 'refreshOAuthUrlBeforeStep6');
   const calls = [];
 
@@ -574,7 +574,7 @@ return { refreshOAuthUrlBeforeStep6 };
 
   assert.equal(oauthUrl, 'https://panel.example.com/oauth');
   assert.deepStrictEqual(calls, [
-    { type: 'log', message: '步骤 7：contributionMode=false，走普通 CPA / SUB2API 链路（当前面板：SUB2API），正在刷新 OAuth 登录地址...' },
+    { type: 'log', message: '步骤 7：contributionMode=false，走普通 CPA / SUB2API / Codex2API 链路（当前面板：SUB2API），正在刷新 OAuth 登录地址...' },
     { type: 'panel' },
     {
       type: 'step',

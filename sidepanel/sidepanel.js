@@ -94,6 +94,10 @@ const rowSub2ApiGroup = document.getElementById('row-sub2api-group');
 const inputSub2ApiGroup = document.getElementById('input-sub2api-group');
 const rowSub2ApiDefaultProxy = document.getElementById('row-sub2api-default-proxy');
 const inputSub2ApiDefaultProxy = document.getElementById('input-sub2api-default-proxy');
+const rowCodex2ApiUrl = document.getElementById('row-codex2api-url');
+const inputCodex2ApiUrl = document.getElementById('input-codex2api-url');
+const rowCodex2ApiAdminKey = document.getElementById('row-codex2api-admin-key');
+const inputCodex2ApiAdminKey = document.getElementById('input-codex2api-admin-key');
 const rowCustomPassword = document.getElementById('row-custom-password');
 const selectMailProvider = document.getElementById('select-mail-provider');
 const btnMailLogin = document.getElementById('btn-mail-login');
@@ -1479,6 +1483,8 @@ function collectSettingsPayload() {
     sub2apiPassword: inputSub2ApiPassword.value,
     sub2apiGroupName: inputSub2ApiGroup.value.trim(),
     sub2apiDefaultProxyName: inputSub2ApiDefaultProxy.value.trim(),
+    codex2apiUrl: inputCodex2ApiUrl.value.trim(),
+    codex2apiAdminKey: inputCodex2ApiAdminKey.value.trim(),
     ...(contributionModeEnabled ? {} : {
       customPassword: inputPassword.value,
     }),
@@ -1858,6 +1864,8 @@ function applySettingsState(state) {
   inputSub2ApiPassword.value = state?.sub2apiPassword || '';
   inputSub2ApiGroup.value = state?.sub2apiGroupName || '';
   inputSub2ApiDefaultProxy.value = state?.sub2apiDefaultProxyName || '';
+  inputCodex2ApiUrl.value = state?.codex2apiUrl || '';
+  inputCodex2ApiAdminKey.value = state?.codex2apiAdminKey || '';
   const restoredMailProvider = isCustomMailProvider(state?.mailProvider)
     || [ICLOUD_PROVIDER, 'hotmail-api', GMAIL_PROVIDER, 'luckmail-api', '163', '163-vip', 'qq', 'inbucket', '2925', 'cloudflare-temp-email'].includes(String(state?.mailProvider || '').trim())
     ? String(state?.mailProvider || '163').trim()
@@ -2864,18 +2872,24 @@ async function saveCloudflareTempEmailDomainSettings(domains, activeDomain, opti
 
 function updatePanelModeUI() {
   const useSub2Api = selectPanelMode.value === 'sub2api';
-  rowVpsUrl.style.display = useSub2Api ? 'none' : '';
-  rowVpsPassword.style.display = useSub2Api ? 'none' : '';
-  rowLocalCpaStep9Mode.style.display = useSub2Api ? 'none' : '';
+  const useCodex2Api = selectPanelMode.value === 'codex2api';
+  const useCpa = !useSub2Api && !useCodex2Api;
+  rowVpsUrl.style.display = useCpa ? '' : 'none';
+  rowVpsPassword.style.display = useCpa ? '' : 'none';
+  rowLocalCpaStep9Mode.style.display = useCpa ? '' : 'none';
   rowSub2ApiUrl.style.display = useSub2Api ? '' : 'none';
   rowSub2ApiEmail.style.display = useSub2Api ? '' : 'none';
   rowSub2ApiPassword.style.display = useSub2Api ? '' : 'none';
   rowSub2ApiGroup.style.display = useSub2Api ? '' : 'none';
   rowSub2ApiDefaultProxy.style.display = useSub2Api ? '' : 'none';
+  rowCodex2ApiUrl.style.display = useCodex2Api ? '' : 'none';
+  rowCodex2ApiAdminKey.style.display = useCodex2Api ? '' : 'none';
 
   const step9Btn = document.querySelector('.step-btn[data-step-key="platform-verify"]');
   if (step9Btn) {
-    step9Btn.textContent = useSub2Api ? 'SUB2API 回调验证' : 'CPA 回调验证';
+    step9Btn.textContent = useSub2Api
+      ? 'SUB2API 回调验证'
+      : (useCodex2Api ? 'Codex2API 回调验证' : 'CPA 回调验证');
   }
 }
 
@@ -4267,6 +4281,22 @@ inputSub2ApiDefaultProxy.addEventListener('input', () => {
   scheduleSettingsAutoSave();
 });
 inputSub2ApiDefaultProxy.addEventListener('blur', () => {
+  saveSettings({ silent: true }).catch(() => { });
+});
+
+inputCodex2ApiUrl.addEventListener('input', () => {
+  markSettingsDirty(true);
+  scheduleSettingsAutoSave();
+});
+inputCodex2ApiUrl.addEventListener('blur', () => {
+  saveSettings({ silent: true }).catch(() => { });
+});
+
+inputCodex2ApiAdminKey.addEventListener('input', () => {
+  markSettingsDirty(true);
+  scheduleSettingsAutoSave();
+});
+inputCodex2ApiAdminKey.addEventListener('blur', () => {
   saveSettings({ silent: true }).catch(() => { });
 });
 
