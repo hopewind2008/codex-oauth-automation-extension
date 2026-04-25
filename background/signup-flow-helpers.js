@@ -20,6 +20,7 @@
       setEmailState,
       SIGNUP_ENTRY_URL,
       SIGNUP_PAGE_INJECT_FILES,
+      waitForTabComplete,
       waitForTabUrlMatch,
     } = deps;
 
@@ -27,6 +28,13 @@
       // Defer content-script injection to the resilient readiness loop below so a
       // transient Chrome error page does not fail step 1 before the tab recovers.
       const tabId = await reuseOrCreateTab('signup-page', SIGNUP_ENTRY_URL);
+
+      if (typeof waitForTabComplete === 'function') {
+        await waitForTabComplete(tabId, {
+          timeoutMs: 20000,
+          retryDelayMs: 300,
+        });
+      }
 
       await ensureContentScriptReadyOnTab('signup-page', tabId, {
         inject: SIGNUP_PAGE_INJECT_FILES,

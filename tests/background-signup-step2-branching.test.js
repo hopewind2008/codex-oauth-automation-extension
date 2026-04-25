@@ -189,6 +189,7 @@ test('signup flow helper forwards custom signup entry readiness timeout to conte
 test('signup flow helper opens signup entry tab without eager injection and lets readiness loop retry injection', async () => {
   const reuseCalls = [];
   const ensureCalls = [];
+  const waitCalls = [];
 
   const helpers = signupFlowApi.createSignupFlowHelpers({
     buildGeneratedAliasEmail: () => '',
@@ -211,6 +212,10 @@ test('signup flow helper opens signup entry tab without eager injection and lets
     setEmailState: async () => {},
     SIGNUP_ENTRY_URL: 'https://chatgpt.com/',
     SIGNUP_PAGE_INJECT_FILES: ['content/utils.js', 'content/signup-page.js'],
+    waitForTabComplete: async (...args) => {
+      waitCalls.push(args);
+      return { id: 51, status: 'complete', url: 'https://chatgpt.com/' };
+    },
     waitForTabUrlMatch: async () => null,
   });
 
@@ -219,6 +224,9 @@ test('signup flow helper opens signup entry tab without eager injection and lets
   assert.equal(tabId, 51);
   assert.deepStrictEqual(reuseCalls, [
     ['signup-page', 'https://chatgpt.com/'],
+  ]);
+  assert.deepStrictEqual(waitCalls, [
+    [51, { timeoutMs: 20000, retryDelayMs: 300 }],
   ]);
   assert.deepStrictEqual(ensureCalls, [
     {

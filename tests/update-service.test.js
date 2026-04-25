@@ -215,3 +215,48 @@ test('getLocalVersionLabel supports plain numeric versions and treats them as ne
   assert.equal(snapshot.localVersion, '0.2');
   assert.equal(snapshot.status, 'latest');
 });
+
+test('update service supports alpha suffix releases like 0.2a', async () => {
+  const { api } = createUpdateService({
+    manifest: {
+      version: '0.2.1',
+      version_name: '0.2a',
+    },
+    fetchImpl: async () => ({
+      ok: true,
+      async json() {
+        return [
+          {
+            tag_name: '0.2a',
+            name: '0.2a',
+            html_url: 'https://example.com/0.2a',
+            published_at: '2026-04-25T00:00:00.000Z',
+            body: '- alpha patch release',
+            draft: false,
+            prerelease: false,
+          },
+          {
+            tag_name: '0.2',
+            name: '0.2',
+            html_url: 'https://example.com/0.2',
+            published_at: '2026-04-24T00:00:00.000Z',
+            body: '- previous release',
+            draft: false,
+            prerelease: false,
+          },
+        ];
+      },
+    }),
+  });
+
+  assert.equal(api.getLocalVersionLabel({
+    version: '0.2.1',
+    version_name: '0.2a',
+  }), '0.2a');
+  assert.equal(api.compareVersions('0.2a', '0.2'), 1);
+
+  const snapshot = await api.getReleaseSnapshot({ force: true });
+  assert.equal(snapshot.localVersion, '0.2a');
+  assert.equal(snapshot.latestVersion, '0.2a');
+  assert.equal(snapshot.status, 'latest');
+});

@@ -12,7 +12,9 @@ const SCRIPT_SOURCE = (() => {
   if (hostname === 'mail.google.com') return 'gmail-mail';
   if (hostname === 'www.icloud.com' || hostname === 'www.icloud.com.cn') return 'icloud-mail';
   if (url.includes('duckduckgo.com/email/settings/autofill')) return 'duck-mail';
-  if (url.includes('chatgpt.com')) return 'chatgpt';
+  // ChatGPT 首页承载的是注册入口流程，运行时应与认证页共用 signup-page source，
+  // 否则步骤 1 会先收到 "chatgpt" ready，再继续等待 "signup-page" ready。
+  if (url.includes('chatgpt.com') || url.includes('chat.openai.com')) return 'signup-page';
   if (url.includes("2925.com")) return "mail-2925";
   // VPS panel — detected dynamically since URL is configurable
   return 'vps-panel';

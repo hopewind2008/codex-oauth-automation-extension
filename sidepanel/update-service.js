@@ -13,9 +13,18 @@
   const VERSION_FAMILY_PRO = 'pro';
   const VERSION_FAMILY_LEGACY = 'legacy';
 
+  function parseVersionShape(version) {
+    const normalized = stripVersionPrefix(version).split('-')[0];
+    const match = normalized.match(/^(\d+(?:\.\d+){1,3})([a-z]+)?$/i);
+    return {
+      core: match?.[1] || '',
+      suffix: String(match?.[2] || '').toLowerCase(),
+    };
+  }
+
   function getVersionFamily(version, fallbackFamily = VERSION_FAMILY_LEGACY) {
     const trimmed = String(version || '').trim();
-    if (/^\d+(?:\.\d+){1,3}(?:[-\s]|$)/.test(trimmed)) {
+    if (/^\d+(?:\.\d+){1,3}(?:[a-z]+)?(?:[-\s]|$)/i.test(trimmed)) {
       return VERSION_FAMILY_PLAIN;
     }
     if (/^m/i.test(trimmed)) {
@@ -35,34 +44,34 @@
   }
 
   function extractVersionCore(version) {
-    const core = stripVersionPrefix(version).split('-')[0];
-    return /^\d+(?:\.\d+){1,3}$/.test(core) ? core : '';
+    return parseVersionShape(version).core;
   }
 
   function formatDisplayVersion(version, fallbackFamily = VERSION_FAMILY_LEGACY) {
-    const core = extractVersionCore(version);
+    const { core, suffix } = parseVersionShape(version);
     if (!core) {
       return '';
     }
 
     const family = getVersionFamily(version, fallbackFamily);
     if (family === VERSION_FAMILY_PLAIN) {
-      return core;
+      return `${core}${suffix}`;
     }
-    return `${family === VERSION_FAMILY_MILESTONE ? 'm' : family === VERSION_FAMILY_PRO ? 'Pro' : 'v'}${core}`;
+    return `${family === VERSION_FAMILY_MILESTONE ? 'm' : family === VERSION_FAMILY_PRO ? 'Pro' : 'v'}${core}${suffix}`;
   }
 
   function parseVersionMeta(version, fallbackFamily = VERSION_FAMILY_LEGACY) {
     const family = getVersionFamily(version, fallbackFamily);
-    const core = extractVersionCore(version);
+    const { core, suffix } = parseVersionShape(version);
     return {
       family,
       core,
       displayVersion: core
         ? (family === VERSION_FAMILY_PLAIN
-          ? core
-          : `${family === VERSION_FAMILY_MILESTONE ? 'm' : family === VERSION_FAMILY_PRO ? 'Pro' : 'v'}${core}`)
+          ? `${core}${suffix}`
+          : `${family === VERSION_FAMILY_MILESTONE ? 'm' : family === VERSION_FAMILY_PRO ? 'Pro' : 'v'}${core}${suffix}`)
         : '',
+      suffix,
       parts: core
         ? core.split('.').map((part) => {
           const numeric = Number.parseInt(part, 10);
@@ -112,6 +121,19 @@
       if (leftPart < rightPart) {
         return -1;
       }
+    }
+
+    if (leftMeta.suffix && !rightMeta.suffix) {
+      return 1;
+    }
+    if (!leftMeta.suffix && rightMeta.suffix) {
+      return -1;
+    }
+    if (leftMeta.suffix > rightMeta.suffix) {
+      return 1;
+    }
+    if (leftMeta.suffix < rightMeta.suffix) {
+      return -1;
     }
 
     return 0;

@@ -6200,6 +6200,7 @@ const signupFlowHelpers = self.MultiPageSignupFlowHelpers?.createSignupFlowHelpe
   setEmailState,
   SIGNUP_ENTRY_URL,
   SIGNUP_PAGE_INJECT_FILES,
+  waitForTabComplete,
   waitForTabUrlMatch,
 });
 const verificationFlowHelpers = self.MultiPageBackgroundVerificationFlow?.createVerificationFlowHelpers({
