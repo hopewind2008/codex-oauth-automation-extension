@@ -12,6 +12,7 @@
       rememberSourceLastUrl,
       sendToContentScript,
       sendToContentScriptResilient,
+      waitForTabComplete,
       waitForTabUrlFamily,
       DEFAULT_SUB2API_GROUP_NAME,
       SUB2API_STEP1_RESPONSE_TIMEOUT_MS,
@@ -46,6 +47,15 @@
       });
       if (!matchedTab) {
         await addLog(`${logLabel}：CPA 页面尚未完全进入目标地址，继续尝试连接内容脚本...`, 'warn');
+      }
+      const completedTab = typeof waitForTabComplete === 'function'
+        ? await waitForTabComplete(tabId, {
+          timeoutMs: 20000,
+          retryDelayMs: 300,
+        })
+        : null;
+      if (completedTab && completedTab.status !== 'complete') {
+        await addLog(`${logLabel}：CPA 页面仍未完成首轮加载，继续尝试连接内容脚本...`, 'warn');
       }
 
       await ensureContentScriptReadyOnTab('vps-panel', tabId, {
@@ -102,6 +112,15 @@
       });
       if (!matchedTab) {
         await addLog(`${logLabel}：SUB2API 页面尚未稳定，继续尝试连接内容脚本...`, 'warn');
+      }
+      const completedTab = typeof waitForTabComplete === 'function'
+        ? await waitForTabComplete(tabId, {
+          timeoutMs: 20000,
+          retryDelayMs: 300,
+        })
+        : null;
+      if (completedTab && completedTab.status !== 'complete') {
+        await addLog(`${logLabel}：SUB2API 页面仍未完成首轮加载，继续尝试连接内容脚本...`, 'warn');
       }
 
       await ensureContentScriptReadyOnTab('sub2api-panel', tabId, {

@@ -6175,6 +6175,7 @@ const panelBridge = self.MultiPageBackgroundPanelBridge?.createPanelBridge({
   rememberSourceLastUrl,
   sendToContentScript,
   sendToContentScriptResilient,
+  waitForTabComplete,
   waitForTabUrlFamily,
   DEFAULT_SUB2API_GROUP_NAME,
   SUB2API_STEP1_RESPONSE_TIMEOUT_MS,
